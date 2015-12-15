@@ -1,16 +1,25 @@
 #####################################################
 
 #####################################################
-import sys, re, logging, yaml, os, urllib2
+import sys, re, logging, yaml, os, urllib2, cookielib
 import feedparser, urlparse
 import extractlinks
 from extractlinks import LinkExtractor
+from bs4 import BeautifulSoup
 
 from flask import request, Flask, jsonify, Response
 app = Flask(__name__)
 
 import libmc
 mc = libmc.Client(['localhost:11211'])
+
+hdr = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+       'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+       'Accept-Encoding': 'none',
+       'Accept-Language': 'en-US,en;q=0.8',
+       'Connection': 'keep-alive'}
+
 
 @app.route('/feediscovery', methods = ['GET'])
 def mainhandler():
@@ -24,20 +33,21 @@ def mainhandler():
             print "Running feediscovery"
             result = None
             try:
-                result = urllib2.urlopen(site_url).read()
+                req = urllib2.Request(site_url, headers=hdr)
+                page = urllib2.urlopen(req)
+                result = page.read()
             except urllib2.URLError, e:
                 print e.args
             except urllib2.HTTPError, e:
                 print e.args
+
             if result:
-                parser = LinkExtractor()
-                parser.set_base_url(site_url)
-                parser.feed(result)
-                if parser.links:
-                    feeds = parser.links
-                    mc.set(site_url, feeds)
-            else:
-                feeds = []
+                content = BeautifulSoup(result)
+                feeds = [v.attrs for v in content.find_all(href=True, rel='alternate', type=re.compile('rss|atom'))]
+                if not feeds:
+                    # Check feedburner
+                    feeds = [v.attrs for v in content.find_all(href=re.compile('feedburner'),rel='nofollow')]
+
     return jsonify(results = feeds)
 
 
