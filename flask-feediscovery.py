@@ -3,8 +3,6 @@
 #####################################################
 import sys, re, logging, yaml, os, urllib2, cookielib
 import feedparser, urlparse
-import extractlinks
-from extractlinks import LinkExtractor
 from bs4 import BeautifulSoup
 
 from flask import request, Flask, jsonify, Response
@@ -56,7 +54,7 @@ def pingfunction():
     return 'alive'
 
 app.debug = True
-app.run(host='0.0.0.0')
+app.run(host='0.0.0.0',port=5005)
 
 
 
