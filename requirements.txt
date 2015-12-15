@@ -1,0 +1,6 @@
+feedparser
+urlparse
+flask
+pyyaml
+urllib2
+libmc
