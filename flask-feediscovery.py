@@ -22,13 +22,20 @@ def mainhandler():
             print "Memcache hit."
         else:
             print "Running feediscovery"
-            result = urllib2.urlopen(site_url).read()
-            parser = LinkExtractor()
-            parser.set_base_url(site_url)
-            parser.feed(result)
-            if parser.links:
-                feeds = parser.links
-                mc.set(site_url, feeds)
+            result = None
+            try:
+                result = urllib2.urlopen(site_url).read()
+            except urllib2.URLError, e:
+                print e.args
+            except urllib2.HTTPError, e:
+                print e.args
+            if result:
+                parser = LinkExtractor()
+                parser.set_base_url(site_url)
+                parser.feed(result)
+                if parser.links:
+                    feeds = parser.links
+                    mc.set(site_url, feeds)
             else:
                 feeds = []
     return jsonify(results = feeds)
